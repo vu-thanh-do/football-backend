@@ -123,11 +123,7 @@ namespace N.Service.UserService
             {
                 user.AreaIds = string.Join(",", areaIds);
             }
-            if (type == AccountTypeConstant.Staff || type == AccountTypeConstant.Manager)
-            {
                 user.EmailConfirmed = true;
-            }
-
             var result = await _userManager.CreateAsync(user, password);
             if (result.Succeeded)
             {
@@ -497,24 +493,18 @@ namespace N.Service.UserService
         {
             try
             {
+
                 var query = (from q in GetQueryable().ToList()
                              select new AppUserDto()
                              {
                                  Id = q.Id,
                                  Name = q.Name,
-                                 StaffId = q.StaffId,
                                  Picture = q.Picture,
                                  Type = q.Type,
                                  Email = q.Email,
                                  Gender = q.Gender,
                                  Phone = q.PhoneNumber,
-                                 AreaIds = q.AreaIds?.Split(",")?.Select(x => Guid.Parse(x)).ToList(),
                              }).AsQueryable();
-
-                if (search.StaffId.HasValue)
-                {
-                    query = query.Where(x => x.StaffId == search.StaffId);
-                }
                 if (!string.IsNullOrEmpty(search.Type))
                 {
                     query = query.Where(x => x.Type == search.Type);
@@ -529,16 +519,14 @@ namespace N.Service.UserService
                 }
                 if (!string.IsNullOrEmpty(search.Phone))
                 {
+                    query = query.Where(x => !string.IsNullOrEmpty(x.Phone) && x.Phone.Contains(search.Phone));
                 }
 
+             
                 var result = PagedList<AppUserDto>.Create(query, search);
-                foreach (var item in result.Items)
-                {
-                    if (item.AreaIds != null && item.AreaIds.Any())
-                    {
-                        item.Areas = _fieldAreaRepository.GetQueryable().Where(x => item.AreaIds.Contains(x.Id)).ToList();
-                    }
-                }
+
+             
+
                 return new DataResponse<PagedList<AppUserDto>>()
                 {
                     Data = result,
@@ -548,8 +536,10 @@ namespace N.Service.UserService
             }
             catch (Exception ex)
             {
+              
                 return DataResponse<PagedList<AppUserDto>>.False(ex.Message);
             }
         }
+
     }
 }
