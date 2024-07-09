@@ -46,6 +46,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\N.Model\N.Model.csproj" />
     <ProjectReference Include="..\N.Service\N.Service.csproj" />
   </ItemGroup>
 

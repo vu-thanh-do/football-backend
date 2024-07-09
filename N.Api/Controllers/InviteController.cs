@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using N.Api.ViewModels;
 using N.Model.Entities;
@@ -6,6 +6,9 @@ using N.Service.InviteService;
 using N.Service.InviteService.Dto;
 using N.Service.Common;
 using N.Service.Dto;
+using N.Model;
+using System;
+using Microsoft.EntityFrameworkCore;
 
 namespace N.Controllers
 {
@@ -15,17 +18,19 @@ namespace N.Controllers
         private readonly IInviteService _inviteService;
         private readonly IMapper _mapper;
         private readonly ILogger<InviteController> _logger;
-
+        private readonly AppDBContext _dbContext;
 
         public InviteController(
             IInviteService inviteService,
             IMapper mapper,
+            AppDBContext dbContext,
             ILogger<InviteController> logger
             )
         {
             this._inviteService = inviteService;
             this._mapper = mapper;
             _logger = logger;
+            _dbContext = dbContext;
         }
 
         [HttpPost("Create")]
@@ -130,7 +135,46 @@ namespace N.Controllers
                 All = null,
             });
         }
+        [HttpGet("InviteMe/v2")]
+        public async Task<ActionResult<List<InviteDto2>>> DuLieuTeamDaMoi(Guid id)
+        {
+         
+            var invites = await _dbContext.Invite
+                                          .Where(u => u.InviteTeamId == id)
+                                          .Select(u => new InviteDto
+                                          {
+                                           
+                                              Id = u.Id,
+                                              InviteTeamId = u.InviteTeamId,
+                                              Accepted = u.Accepted,
+                                              TeamId = u.TeamId,
+                                              
+                                          })
+                                          .ToListAsync();
+           
+                return Ok(invites);
 
+        }
+        [HttpGet("InviteMe/v3")]
+        public async Task<ActionResult<List<InviteDto2>>> DuLieuTeamDaMoiV2(Guid id)
+        {
+
+            var invites = await _dbContext.Invite
+                                          .Where(u => u.TeamId == id)
+                                          .Select(u => new InviteDto
+                                          {
+
+                                              Id = u.Id,
+                                              InviteTeamId = u.InviteTeamId,
+                                              Accepted = u.Accepted,
+                                              TeamId = u.TeamId,
+
+                                          })
+                                          .ToListAsync();
+
+            return Ok(invites);
+
+        }
         [HttpGet("IAccepted")]
         public async Task<DataResponse<PagedList<InviteDto>>> IAccepted()
         {
