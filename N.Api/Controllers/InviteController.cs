@@ -104,12 +104,12 @@ namespace N.Controllers
                     entity.Accepted = model.Accept;
                     await _inviteService.Update(entity);
 
-                    var all = _inviteService.GetQueryable().Where(x => x.InviteTeamId == entity.InviteTeamId && x.Id != entity.Id);
-                    foreach (var item in all)
-                    {
-                        item.Accepted = false;
-                    }
-                    await _inviteService.Update(all);
+                    //var all = _inviteService.GetQueryable().Where(x => x.InviteTeamId == entity.InviteTeamId && x.Id != entity.Id);
+                    //foreach (var item in all)
+                    //{
+                    //    item.Accepted = false;
+                    //}
+                    //await _inviteService.Update(all);
                 }
                 return new DataResponse<Invite>()
                 {
