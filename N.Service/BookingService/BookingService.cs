@@ -1,4 +1,4 @@
-using Google.Apis.Drive.v3.Data;
+﻿using Google.Apis.Drive.v3.Data;
 using Microsoft.EntityFrameworkCore;
 using N.Model.Entities;
 using N.Repository.BookingRepository;
@@ -165,10 +165,8 @@ namespace N.Service.BookingService
         public async Task<DataResponse<PagedList<BookingDto>>> History(BookingSearch search)
         {
             var query = from q in GetQueryable()
-                        join user in _userRepository.GetQueryable()
-                        on q.UserId equals user.Id
-                        join field in _fieldRepository.GetQueryable()
-                        on q.FieldId equals field.Id
+                      
+                        join field in _fieldRepository.GetQueryable() on q.FieldId equals field.Id
                         select new BookingDto()
                         {
                             Description = q.Description,
@@ -183,40 +181,14 @@ namespace N.Service.BookingService
                             Paid = q.Paid,
                             Deposited = q.Deposited,
                             CreatedDate = q.CreatedDate,
-                            User = AppUserDto.FromAppUser(user),
                             Field = field,
                         };
 
-            if (search.UserId.HasValue)
-            {
-                query = query.Where(x => x.UserId == search.UserId);
-            }
-            if (search.FieldId.HasValue)
-            {
-                query = query.Where(x => x.FieldId == search.FieldId);
-            }
-            if (search.OwnerId.HasValue)
-            {
-                query = query.Where(x => x.Field != null && x.Field.UserId == search.OwnerId);
-            }
-            if (search.Start.HasValue)
-            {
-                query = query.Where(x => x.Start >= search.Start);
-            }
-            if (search.End.HasValue)
-            {
-                query = query.Where(x => x.End <= search.End);
-            }
-            if (search.Deposited.HasValue)
-            {
-                query = query.Where(x => x.Deposited == search.Deposited);
-            }
-            if (search.Paid.HasValue)
-            {
-                query = query.Where(x => x.Paid == search.Paid);
-            }
+            // Bỏ hết các điều kiện kiểm tra
             query = query.OrderByDescending(x => x.CreatedDate);
+
             var result = PagedList<BookingDto>.Create(query, search);
+
             foreach (var item in result.Items)
             {
                 var payments = _serviceFeePaymentRepository.GetQueryable()
@@ -229,11 +201,14 @@ namespace N.Service.BookingService
                         FieldServiceFeeId = x.FieldServiceFeeId,
                         Price = x.Price,
                     }).ToList();
+
                 foreach (var payment in payments)
                 {
                     payment.FieldService = (await _fieldServiceFeeService.GetDto(payment.FieldServiceFeeId ?? Guid.Empty)).Data;
                 }
+
                 item.Services = payments;
+
                 if (item.Services != null && item.Services.Any())
                 {
                     item.Price = item.Price ?? 0;
@@ -243,11 +218,13 @@ namespace N.Service.BookingService
                     }
                 }
             }
+
             return new DataResponse<PagedList<BookingDto>>()
             {
                 Data = result,
                 Success = true,
             };
         }
+
     }
 }
