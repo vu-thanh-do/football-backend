@@ -520,13 +520,8 @@ namespace N.Service.UserService
                 if (!string.IsNullOrEmpty(search.Phone))
                 {
                     query = query.Where(x => !string.IsNullOrEmpty(x.Phone) && x.Phone.Contains(search.Phone));
-                }
-
-             
-                var result = PagedList<AppUserDto>.Create(query, search);
-
-             
-
+                }             
+                var result = PagedList<AppUserDto>.Create(query, search);           
                 return new DataResponse<PagedList<AppUserDto>>()
                 {
                     Data = result,
