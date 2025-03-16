@@ -27,6 +27,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Collections.Generic;
 
 namespace N.Service.UserService
 {
@@ -37,6 +38,9 @@ namespace N.Service.UserService
         private readonly IFieldAreaRepository _fieldAreaRepository;
         private readonly IDistributedCache _cache;
         private readonly ITokenService _tokenService;
+        // Dictionary tĩnh để lưu trữ refreshToken và userId
+        private static Dictionary<string, string> _refreshTokens = new Dictionary<string, string>();
+
         public UserService(UserManager<AppUser> userManager,
             SignInManager<AppUser> signInManager,
             IUserRepository userRepository,
@@ -257,7 +261,11 @@ namespace N.Service.UserService
 
         public async Task<DataResponse<AppUserDto>> RefreshToken(string refreshToken)
         {
-            var userId = await _cache.GetStringAsync(refreshToken);
+            string userId = null;
+            if (_refreshTokens.ContainsKey(refreshToken))
+            {
+                userId = _refreshTokens[refreshToken];
+            }
             var user = await GetUser(userId);
             if (user == null)
                 return new DataResponse<AppUserDto>()
@@ -463,7 +471,7 @@ namespace N.Service.UserService
             }
             else
             {
-                _cache.Refresh(refreshToken);
+                // Không cần làm gì, refreshToken đã tồn tại trong Dictionary
             }
 
 
@@ -482,10 +490,8 @@ namespace N.Service.UserService
         private string GenRefreshToken(Guid? userId)
         {
             var refreshToken = Generator.Base64FromBytes(64);
-            _cache.SetString(refreshToken, userId.ToString(), new DistributedCacheEntryOptions()
-            {
-                AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(AppSettings.AuthSettings.DaysRefreshTokenExpires)
-            });
+            // Lưu vào Dictionary thay vì cache
+            _refreshTokens[refreshToken] = userId.ToString();
             return refreshToken;
         }
 
